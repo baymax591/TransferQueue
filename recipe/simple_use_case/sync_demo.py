@@ -176,7 +176,7 @@ def fit(config, data_system_client):
 
             # For the master client, notify all controllers to clear data state, the master returns metadata
             # The client then notifies all storage units to clear based on the metadata
-            # The client selects a primary controller to obtain metadata, while other controllers clear directly without returning metadata
+            # Client gets metadata from one controller, clears others directly
             data_system_client.clear(partition_id=f"train_{step}")
             logger.info("clear ok! ")
     logger.info("demo done!")
