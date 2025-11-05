@@ -180,7 +180,7 @@ class DataPartitionStatus:
 
     # Production status tensor - dynamically expandable
     # Values: 0 = not produced, 1 = ready for consumption
-    production_status: Optional[torch.Tensor] = None
+    production_status: Optional[torch.Tensor] = torch.zeros(TQ_INIT_SAMPLE_NUM, TQ_INIT_FIELD_NUM, dtype=torch.int8)
 
     # Consumption status per task - task_name -> consumption_tensor
     # Each tensor tracks which samples have been consumed by that task
@@ -222,16 +222,6 @@ class DataPartitionStatus:
         Args:
             required_samples: Minimum number of samples needed
         """
-        if self.production_status is None:
-            # First-time initialization - use configured initial size
-            initial_size = max(TQ_INIT_SAMPLE_NUM, required_samples)
-            self.production_status = torch.zeros(initial_size, TQ_INIT_FIELD_NUM, dtype=torch.int8)
-            logger.debug(
-                f"Initialized production status for partition {self.partition_id}: "
-                f"{initial_size} samples, {TQ_INIT_FIELD_NUM} fields"
-            )
-            return
-
         current_samples = self.production_status.shape[0]
         if required_samples > current_samples:
             # Expand rows using minimum expansion size for predictable memory usage
