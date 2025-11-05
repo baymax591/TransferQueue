@@ -91,7 +91,7 @@ def compute_old_log_prob(data1, _data2):
 
 
 def actor_rollout_wg_generate_sequences(data_meta, data_system_client):
-    # 1. 根据data_meta通过client从storage unit中拉取真实data
+    # 1. Pull actual data from storage unit via client based on data_meta
     data = data_system_client.get_data(data_meta)
     logger.info(f"demo get data {data}")
 
@@ -106,7 +106,7 @@ def actor_rollout_wg_generate_sequences(data_meta, data_system_client):
         batch_size=output.size(0),
     )
 
-    # 2. 根据data_meta将结果写回storage unit
+    # 2. Write results back to storage unit based on data_meta
     data_system_client.put(data=output, metadata=data_meta)
     data_meta.add_fields(output)
     logger.info("demo put data to storages done")
@@ -115,7 +115,7 @@ def actor_rollout_wg_generate_sequences(data_meta, data_system_client):
 
 
 def actor_rollout_wg_compute_old_log_prob(data_meta, data_system_client):
-    # 1. 根据data_meta通过client从storage unit中拉取真实data
+    # 1. Pull actual data from storage unit via client based on data_meta
     data = data_system_client.get_data(data_meta)
     logger.info(f"demo get data {data}")
 
@@ -123,7 +123,7 @@ def actor_rollout_wg_compute_old_log_prob(data_meta, data_system_client):
 
     output = TensorDict({"old_log_prob": output}, batch_size=output.size(0))
 
-    # 2. 根据data_meta将结果写回storage unit
+    # 2. Write results back to storage unit based on data_meta
     data_system_client.put(data=output, metadata=data_meta)
     data_meta.add_fields(output)
     logger.info("demo put data to storages done")
@@ -174,16 +174,16 @@ def fit(config, data_system_client):
 
             batch_meta = batch_meta.union(old_log_prob_meta)
 
-            # 对于主控的client，通知所有controller进行数据状态清空，主控返回metadata；
-            # client再根据metadata通知所有storage unit清空
-            # client选择一个主controller拿到metadata，其他的controller直接清空不用返回metadata即可
+            # For the master client, notify all controllers to clear data state, the master returns metadata
+            # The client then notifies all storage units to clear based on the metadata
+            # The client selects a primary controller to obtain metadata, while other controllers clear directly without returning metadata
             data_system_client.clear(partition_id=f"train_{step}")
             logger.info("clear ok! ")
     logger.info("demo done!")
 
 
 def main(config):
-    # Initialize Data System：基于Ray拉起Controller以及Storage
+    # Initialize Data System: Launch Controller and Storage based on Ray
     _data_system_controller, _data_system_storage_units, data_system_client = initialize_data_system(config)
     import time
 

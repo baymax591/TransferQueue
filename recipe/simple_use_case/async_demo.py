@@ -57,7 +57,7 @@ def generate_sequences(data):
 
 class ActorRolloutRefWorker:
     def actor_rollout_wg_generate_sequences(self, data_meta, data_system_client):
-        # 1. 根据data_meta通过client从storage unit中拉取真实data
+        # 1. Pull actual data from storage unit via client based on data_meta
         data = asyncio.run(data_system_client.async_get_data(data_meta))
         logger.info(f"demo get data->generate_sequences {data}")
 
@@ -72,7 +72,7 @@ class ActorRolloutRefWorker:
             batch_size=output.size(0),
         )
 
-        # 2. 根据data_meta将结果写回storage unit
+        # 2. Write results back to storage unit based on data_meta
         asyncio.run(data_system_client.async_put(data=output, metadata=data_meta))
         data_meta.add_fields(output)
         logger.info("demo put data to storages done")
@@ -80,7 +80,7 @@ class ActorRolloutRefWorker:
         return data_meta
 
     def actor_rollout_wg_compute_old_log_prob(self, data_meta, data_system_client):
-        # 1. 根据data_meta通过client从storage unit中拉取真实data
+        # 1. Pull actual data from storage unit via client based on data_meta
         data = asyncio.run(data_system_client.async_get_data(data_meta))
         logger.info(f"demo get data->old_log_prob {data}")
 
@@ -88,7 +88,7 @@ class ActorRolloutRefWorker:
 
         output = TensorDict({"old_log_prob": output}, batch_size=output.size(0))
 
-        # 2. 根据data_meta将结果写回storage unit
+        # 2. Write results back to storage unit based on data_meta
         asyncio.run(data_system_client.async_put(data=output, metadata=data_meta))
         data_meta.add_fields(output)
         logger.info("demo put data to storages done")
@@ -291,8 +291,8 @@ class Trainer:
 
                 batch_meta = batch_meta.union(old_log_prob_meta)
 
-                # client通知controller进行数据状态清空，controller返回metadata；
-                # client再根据metadata通知所有storage unit清空
+                # Client notifies controller to clear data state, controller returns metadata;
+                # Client then notifies all storage units to clear based on the metadata
                 asyncio.run(self.data_system_client.async_clear(partition_id=f"train_{step}"))
                 logger.info("clear ok! ")
         logger.info("demo done!")
