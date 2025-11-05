@@ -140,13 +140,13 @@ class Trainer:
             batch_size=input_ids_repeated.size(0),
         )
 
-        self.async_put_manager.put_data(prompt_batch, partition_id=f"train_0")
+        self.async_put_manager.put_data(prompt_batch, partition_id="train_0")
 
         batch_meta = asyncio.run(
             self.data_system_client.async_get_meta(
                 data_fields=["input_ids", "attention_mask"],
                 batch_size=self.config.global_batch_size * self.config.num_n_samples,
-                partition_id=f"train_0",
+                partition_id="train_0",
                 get_n_samples=False,
                 task_name="batch_meta_test",
             )
