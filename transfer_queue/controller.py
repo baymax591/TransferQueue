@@ -301,6 +301,9 @@ class DataPartitionStatus:
             max_sample_idx = max(global_indices) if global_indices else -1
             required_samples = max_sample_idx + 1
 
+            # Ensure we have enough rows
+            self.ensure_samples_capacity(required_samples)
+
             # Register new fields if needed
             new_fields = [field for field in field_names if field not in self.field_name_mapping]
             if new_fields:
@@ -310,9 +313,6 @@ class DataPartitionStatus:
 
                 required_fields = len(self.field_name_mapping)
                 self.ensure_fields_capacity(required_fields)
-
-            # Ensure we have enough rows
-            self.ensure_samples_capacity(required_samples)
 
             # Update production status
             if self.production_status is not None and global_indices and field_names:
