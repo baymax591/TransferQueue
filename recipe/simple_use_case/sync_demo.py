@@ -91,7 +91,7 @@ def compute_old_log_prob(data1, _data2):
 
 
 def actor_rollout_wg_generate_sequences(data_meta, data_system_client):
-    # 1. Pull actual data from storage unit via client based on data_meta
+    # 1. Pull actual data from storage plane via client based on data_meta
     data = data_system_client.get_data(data_meta)
     logger.info(f"demo get data {data}")
 
@@ -106,7 +106,7 @@ def actor_rollout_wg_generate_sequences(data_meta, data_system_client):
         batch_size=output.size(0),
     )
 
-    # 2. Write results back to storage unit based on data_meta
+    # 2. Write results back to storage plane based on data_meta
     data_system_client.put(data=output, metadata=data_meta)
     data_meta.add_fields(output)
     logger.info("demo put data to storages done")
@@ -115,7 +115,7 @@ def actor_rollout_wg_generate_sequences(data_meta, data_system_client):
 
 
 def actor_rollout_wg_compute_old_log_prob(data_meta, data_system_client):
-    # 1. Pull actual data from storage unit via client based on data_meta
+    # 1. Pull actual data from storage plane via client based on data_meta
     data = data_system_client.get_data(data_meta)
     logger.info(f"demo get data {data}")
 
@@ -123,7 +123,7 @@ def actor_rollout_wg_compute_old_log_prob(data_meta, data_system_client):
 
     output = TensorDict({"old_log_prob": output}, batch_size=output.size(0))
 
-    # 2. Write results back to storage unit based on data_meta
+    # 2. Write results back to storage plane based on data_meta
     data_system_client.put(data=output, metadata=data_meta)
     data_meta.add_fields(output)
     logger.info("demo put data to storages done")
@@ -174,9 +174,8 @@ def fit(config, data_system_client):
 
             batch_meta = batch_meta.union(old_log_prob_meta)
 
-            # For the master client, notify all controllers to clear data state, the master returns metadata
-            # The client then notifies all storage units to clear based on the metadata
-            # Client gets metadata from one controller, clears others directly
+            # Client notifies controller to clear data state, controller returns metadata;
+            # Client then notifies storage manager to clear based on the metadata
             data_system_client.clear(partition_id=f"train_{step}")
             logger.info("clear ok! ")
     logger.info("demo done!")
