@@ -15,10 +15,10 @@
 import asyncio
 import logging
 import math
-import os
 import sys
 from pathlib import Path
 
+import pytest
 import ray
 import torch
 from omegaconf import OmegaConf
@@ -38,9 +38,20 @@ from transfer_queue.utils.utils import get_placement_group  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-os.environ["RAY_DEDUP_LOGS"] = "0"
-os.environ["RAY_DEBUG"] = "1"
-ray.init()
+
+@pytest.fixture(scope="function")
+def ray_setup():
+    if ray.is_initialized():
+        ray.shutdown()
+    ray.init(
+        ignore_reinit_error=True,
+        runtime_env={"env_vars": {"RAY_DEBUG": "1", "RAY_DEDUP_LOGS": "0"}},
+        log_to_driver=True,
+    )
+    yield
+    if ray.is_initialized():
+        ray.shutdown()
+        logger.info("Ray has been shut down completely after test")
 
 
 @ray.remote(num_cpus=1)
@@ -154,7 +165,7 @@ class Trainer:
         return prompt_batch, batch_meta
 
 
-def test_async_put():
+def test_async_put(ray_setup):
     config_str = """
       global_batch_size: 8
       num_global_batch: 1
