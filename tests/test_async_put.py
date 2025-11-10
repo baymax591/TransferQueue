@@ -18,7 +18,6 @@ import math
 import sys
 from pathlib import Path
 
-import pytest
 import ray
 import torch
 from omegaconf import OmegaConf
@@ -35,23 +34,8 @@ from transfer_queue import (  # noqa: E402
 )
 from transfer_queue.utils.utils import get_placement_group  # noqa: E402
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-@pytest.fixture(scope="function")
-def ray_setup():
-    if ray.is_initialized():
-        ray.shutdown()
-    ray.init(
-        ignore_reinit_error=True,
-        runtime_env={"env_vars": {"RAY_DEBUG": "1", "RAY_DEDUP_LOGS": "0"}},
-        log_to_driver=True,
-    )
-    yield
-    if ray.is_initialized():
-        ray.shutdown()
-        logger.info("Ray has been shut down completely after test")
 
 
 @ray.remote(num_cpus=1)
@@ -165,7 +149,15 @@ class Trainer:
         return prompt_batch, batch_meta
 
 
-def test_async_put(ray_setup):
+def test_async_put():
+    if ray.is_initialized():
+        ray.shutdown()
+    ray.init(
+        ignore_reinit_error=True,
+        runtime_env={"env_vars": {"RAY_DEBUG": "1", "RAY_DEDUP_LOGS": "0"}},
+        log_to_driver=True,
+    )
+
     config_str = """
       global_batch_size: 8
       num_global_batch: 1
@@ -187,3 +179,7 @@ def test_async_put(ray_setup):
     assert torch.equal(
         torch.sort(data_fetch["input_ids"].flatten())[0], torch.sort(data_origin["input_ids"].flatten())[0]
     )
+
+    if ray.is_initialized():
+        ray.shutdown()
+        logger.info("Ray has been shut down completely after test")
