@@ -230,7 +230,6 @@ async def test_sequential_async_put_with_verification():
                 batch_size=4,
                 partition_id=partition_id,
                 mode="fetch",
-                get_n_samples=False,
                 task_name="verification_task",
             )
 
@@ -284,7 +283,6 @@ async def test_multiple_puts_same_partition():
             batch_size=batch_size,
             partition_id=partition_id,
             mode="fetch",
-            get_n_samples=False,
             task_name="verification_task",
         )
 
