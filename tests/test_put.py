@@ -22,19 +22,19 @@ import ray
 import torch
 from tensordict import TensorDict
 
-# Setup path
 parent_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(parent_dir))
 
-from transfer_queue import (
+from transfer_queue import (  # noqa: E402
     AsyncTransferQueueClient,
     SimpleStorageUnit,
     TransferQueueController,
     process_zmq_server_info,
 )
-from transfer_queue.utils.utils import get_placement_group
+from transfer_queue.utils.utils import get_placement_group  # noqa: E402
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
