@@ -17,7 +17,6 @@ import os
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
-from operator import itemgetter
 from threading import Thread
 from typing import Any, Optional
 from uuid import uuid4
