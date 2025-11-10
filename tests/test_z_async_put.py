@@ -70,7 +70,17 @@ class AsyncPutManager:
             self.async_put_workers.append(AsyncPutWorker.remote(config, data_system_controller_info))
 
     def put_data(self, data, partition_id):
-        split_data = data.split(data.batch_size[0] // self.config.put_num_workers)
+        batch_size = data.batch_size[0]
+        num_workers = self.config.put_num_workers
+        chunk_size = batch_size // num_workers
+        
+        split_data = []
+        for i in range(num_workers):
+            start_idx = i * chunk_size
+            end_idx = (i + 1) * chunk_size if i < num_workers - 1 else batch_size
+            chunk = data[start_idx:end_idx]
+            split_data.append(chunk)
+        
         ray.get(
             [
                 worker.put_data.remote(data_chunk, partition_id)
@@ -170,15 +180,23 @@ def test_async_put():
     trainer = Trainer(dict_conf)
     data_origin, batch_meta = trainer.async_put()
 
-    assert batch_meta.global_indexes == list(range(16))
+    expected_indices = list(range(16))  # 8 * 2 = 16
+    assert batch_meta.global_indexes == expected_indices, f"Expected {expected_indices}, got {batch_meta.global_indexes}"
 
-    data_fetch = asyncio.run(trainer.async_put_manager.data_system_client.async_get_data(batch_meta))
+    data_fetch = asyncio.run(trainer.data_system_client.async_get_data(batch_meta))
 
-    assert data_fetch.shape == data_origin.shape
-    assert data_fetch["input_ids"].shape == data_origin["input_ids"].shape
-    assert torch.equal(
-        torch.sort(data_fetch["input_ids"].flatten())[0], torch.sort(data_origin["input_ids"].flatten())[0]
-    )
+    assert data_fetch.batch_size == data_origin.batch_size, f"Shape mismatch: {data_fetch.batch_size} vs {data_origin.batch_size}"
+    assert data_fetch["input_ids"].shape == data_origin["input_ids"].shape, f"Input IDs shape mismatch: {data_fetch['input_ids'].shape} vs {data_origin['input_ids'].shape}"
+    
+    sorted_fetch = torch.sort(data_fetch["input_ids"].flatten())[0]
+    sorted_origin = torch.sort(data_origin["input_ids"].flatten())[0]
+    assert torch.equal(sorted_fetch, sorted_origin), "Data content mismatch after sorting"
+
+    logger.info(f"Original data shape: {data_origin.shape}")
+    logger.info(f"Fetched data shape: {data_fetch.shape}")
+    logger.info(f"Original input_ids shape: {data_origin['input_ids'].shape}")
+    logger.info(f"Fetched input_ids shape: {data_fetch['input_ids'].shape}")
+    logger.info(f"Global indexes: {batch_meta.global_indexes}")
 
     if ray.is_initialized():
         ray.shutdown()
