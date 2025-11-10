@@ -336,30 +336,17 @@ class DataPartitionStatus:
         shapes: Optional[dict[int, dict[str, Any]]] = None,
     ):
         """Update field dtype and shape metadata."""
-        if dtypes and global_indices:
-            dtype_value = itemgetter(*global_indices)(dtypes)
-        else:
-            dtype_value = ()
-        if shapes and global_indices:
-            shape_value = itemgetter(*global_indices)(shapes)
-        else:
-            shape_value = ()
-
-        if not isinstance(dtype_value, tuple):
-            dtype_value = (dtype_value,)
-        if not isinstance(shape_value, tuple):
-            shape_value = (shape_value,)
-
-        for i, global_idx in enumerate(global_indices):
+        for global_idx in global_indices:
             if global_idx not in self.field_dtypes:
                 self.field_dtypes[global_idx] = {}
             if global_idx not in self.field_shapes:
                 self.field_shapes[global_idx] = {}
 
-            if dtype_value is not None and i < len(dtype_value):
-                self.field_dtypes[global_idx].update(dtype_value[i])
-            if shape_value is not None and i < len(shape_value):
-                self.field_shapes[global_idx].update(shape_value[i])
+            for field_name in field_names:
+                if dtypes and global_idx in dtypes and field_name in dtypes[global_idx]:
+                    self.field_dtypes[global_idx][field_name] = dtypes[global_idx][field_name]
+                if shapes and global_idx in shapes and field_name in shapes[global_idx]:
+                    self.field_shapes[global_idx][field_name] = shapes[global_idx][field_name]
 
     # ==================== Consumption Status Interface ====================
 
